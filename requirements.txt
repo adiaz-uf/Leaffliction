@@ -1,0 +1,7 @@
+jupyterlab
+seaborn
+pandas
+matplotlib
+numpy
+PyQt5
+flake8
