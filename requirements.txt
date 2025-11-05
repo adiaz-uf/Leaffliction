@@ -6,3 +6,4 @@ numpy
 PyQt5
 flake8
 opencv-python
+scipy
