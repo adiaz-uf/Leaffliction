@@ -16,6 +16,7 @@ class Transform:
 
         # Roi objects image        
         self.roi_objects_img = None
+        self.roi_objects_contours = 0
 
         # Analyze_object image        
         self.nalyze_object_img = None
@@ -86,13 +87,55 @@ class Transform:
         # Combine them to get the final image
         final_image = cv2.add(foreground, background_part)
 
-        self.masked_image = final_image
+        self.masked_img = final_image
         return final_image
 
 
+    """
+    Finds the contours (Regions of Interest) from the final binary mask.
+    Paints the white parts of the binary image in green on the original image,
+    then draws a blue rectangle around all the green parts.
+    """
     def roi_objects(self):
-            # TODO: Implement ROI objects logic
-            pass
+        if self.masked_img is None:
+            self.mask()
+
+        # Convert masked image to grayscale for contour detection
+        gray = cv2.cvtColor(self.masked_img, cv2.COLOR_BGR2GRAY)
+
+        # Create binary image: diseased parts (not white) become white
+        # White background (255) becomes black (0)
+        _, binary = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY_INV)
+
+        # Apply morphological operations to clean up noise
+        kernel = np.ones((5, 5), np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)  # Fill small holes
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)   # Remove small noise
+
+        # Start with a copy of the original image
+        roi_image = self.original_img.copy()
+
+        # Paint the white parts (diseased regions) of binary image in GREEN
+        # Where binary is white (255), paint green on roi_image
+        roi_image[binary == 255] = [0, 255, 0]  # BGR: Green
+
+        # Find the bounding box of all white pixels in binary image
+        white_pixels = np.where(binary == 255)
+
+        if len(white_pixels[0]) > 0:
+            # Get min/max coordinates of white pixels
+            y_min, y_max = white_pixels[0].min(), white_pixels[0].max()
+            x_min, x_max = white_pixels[1].min(), white_pixels[1].max()
+
+            # Draw blue rectangle around all green parts
+            cv2.rectangle(roi_image, (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)
+
+            self.roi_objects_img = roi_image
+        else:
+            print("No diseased regions found")
+            self.roi_objects_img = roi_image
+
+        return roi_image
 
     def analyze_object(self):
             # TODO: Implement analyze object logic
@@ -121,6 +164,10 @@ def transform_image(image_path):
     mask_image = transform.mask()
     if mask_image is not None:
         cv2.imshow("Mask Image", mask_image)
+
+    roi_objects_img = transform.roi_objects()
+    if roi_objects_img is not None:
+        cv2.imshow("Roi Objects Image", roi_objects_img)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
