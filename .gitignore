@@ -5,4 +5,3 @@ env/
 .venv/
 .ipynb_*
 __pycache__
-augmented/
