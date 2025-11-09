@@ -9,8 +9,13 @@ import matplotlib.pyplot as plt
 # Data path
 data_path = './data/original/'
 # Library const values
-border_mode = cv2.BORDER_CONSTANT
-border_value = (0, 0, 0)
+BORDER_DARK = cv2.BORDER_CONSTANT
+BORDER_VALUE_DARK = (0, 0, 0)
+BORDER_REFLECT = cv2.BORDER_REFLECT
+BORDER_VALUE_REFLECT = None
+
+border_mode = BORDER_DARK
+border_value = BORDER_VALUE_DARK
 
 
 def flip_image(image):
@@ -260,6 +265,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     subdir = sys.argv[1]
+
+    if "-r" in sys.argv:
+        border_mode = BORDER_REFLECT
+        border_value = BORDER_VALUE_REFLECT
 
     if os.path.isdir(data_path + subdir):
         file_count = 0
