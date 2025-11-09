@@ -11,14 +11,24 @@ install-deps:
 
 
 augmentation-apple:
-	python src/Part2/Augmentation.py Apple
+	@venv/bin/python3 src/Part2/Augmentation.py Apple
 
 augmentation-grape:
-	python src/Part2/Augmentation.py Grape
+	@venv/bin/python3 src/Part2/Augmentation.py Grape
 
 
 augmentation-one:
-	python src/Part2/Augmentation.py "apple/Apple_Black_rot/image (1).JPG"
+	@venv/bin/python3 src/Part2/Augmentation.py "apple/Apple_Black_rot/image (1).JPG"
+
+
+train:
+	@venv/bin/python3 src/Part4/train.py data/original
+
+train-apple:
+	@venv/bin/python3 src/Part4/train.py data/original/apple
+
+train-grape:
+	@venv/bin/python3 src/Part4/train.py data/original/grape
 
 jupyter:
 	@venv/bin/jupyter lab
