@@ -27,7 +27,8 @@ def flip_image(image):
 def rotate_image(image):
     height, width = image.shape[:2]
     center = (width / 2, height / 2)
-    rotation_matrix = cv2.getRotationMatrix2D(center, 30, 1.0)
+    angle = random.choice([-30, -15, 15, 30])
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
 
     rotated = cv2.warpAffine(
         image,
