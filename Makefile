@@ -9,17 +9,14 @@ create-venv:
 install-deps:
 	venv/bin/pip install -r requirements.txt
 
-
 augmentation-apple:
 	@venv/bin/python3 src/Part2/Augmentation.py Apple
 
 augmentation-grape:
 	@venv/bin/python3 src/Part2/Augmentation.py Grape
 
-
 augmentation-one:
 	@venv/bin/python3 src/Part2/Augmentation.py "apple/Apple_Black_rot/image (1).JPG"
-
 
 train:
 	@venv/bin/python3 src/Part4/train.py data/original

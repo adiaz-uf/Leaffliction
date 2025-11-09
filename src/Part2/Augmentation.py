@@ -207,8 +207,8 @@ def projective_transform(image):
     return projected
 
 
-def display_images(original_image, augmented_images):
-    num_images = len(augmented_images) + 1
+def display_images(augmented_images):
+    num_images = len(augmented_images)
     cols = 4
     rows = (num_images + cols - 1) // cols
 
@@ -217,16 +217,8 @@ def display_images(original_image, augmented_images):
 
     axes = axes.flatten() if num_images > 1 else [axes]
 
-    # Convert BGR to RGB for matplotlib
-    original_rgb = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
-
-    # Display original image
-    axes[0].imshow(original_rgb)
-    axes[0].set_title('Original', fontsize=12, fontweight='bold')
-    axes[0].axis('off')
-
     # Display augmented images
-    for idx, (name, img) in enumerate(augmented_images.items(), start=1):
+    for idx, (name, img) in enumerate(augmented_images.items(), start=0):
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         axes[idx].imshow(img_rgb)
         axes[idx].set_title(name, fontsize=12)
@@ -237,8 +229,9 @@ def display_images(original_image, augmented_images):
     plt.show()
 
 
-def main(filePath):
-    print(f'Processing file: {filePath}')
+def make_augmentations(filePath, verbose=True):
+    if verbose:
+        print(f'Processing file: {filePath}')
     image = cv2.imread(filePath)
 
     if image is None:
@@ -248,6 +241,7 @@ def main(filePath):
     all_images = {}
 
     # Image augmentations
+    all_images["Original"] = image
     all_images["Flip"] = flip_image(image)
     all_images["Rotate"] = rotate_image(image)
     all_images["Skew"] = skew_image(image)
@@ -256,7 +250,7 @@ def main(filePath):
     all_images["Distort"] = distort_image(image)
     all_images["Projective"] = projective_transform(image)
 
-    return image, all_images
+    return all_images
 
 
 if __name__ == "__main__":
@@ -278,11 +272,11 @@ if __name__ == "__main__":
                 filePath = os.path.join(root, file)
                 if os.path.isfile(filePath):
                     file_count += 1
-                    result = main(filePath)
+                    result = make_augmentations(filePath)
                     if result is None:
                         continue
 
-                    original, images = result
+                    images = result
                     # save file to augmented data folder
                     augmented_path = './data/augmented/' + subdir
                     try:
@@ -297,10 +291,9 @@ if __name__ == "__main__":
         print(f'Processed {file_count} files.')
 
     elif os.path.isfile(data_path + subdir):
-        images = main(data_path + subdir)
+        images = make_augmentations(data_path + subdir)
         if images is not None:
-            original, images = images
-            display_images(original, images)
+            display_images(images)
             augmented_path = './data/augmented/' + os.path.dirname(subdir)
             try:
                 for image_name in images:
