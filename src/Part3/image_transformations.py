@@ -1,7 +1,11 @@
 import cv2
 import numpy as np
+import matplotlib
+matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
 from plantcv import plantcv as pcv
 
+# !IMPORTANT: export QT_QPA_PLATFORM=wayland to show windows
 
 class Transform:
     def __init__(self, img_path):
@@ -217,9 +221,90 @@ class Transform:
         self.analyze_object_img = analysis_image
         return self.analyze_object_img
 
+    """
+    Creates pseudolandmarks (landmark points) along the main contour
+    and disease contours.
+    - Blue points: Right side of leaf
+    - Magenta points: Left side of leaf
+    - Orange points: Disease contours
+    """
     def pseudolandmarks(self):
-        # TODO: Implement pseudolandmarks logic
-        pass
+        if self.original_img is None:
+            self.load_image()
+        if self.gaussian_blur_img is None:
+            self.gaussian_blur()
+
+        pseudolandmarks_img = self.original_img.copy()
+
+        obj_contours, _ = cv2.findContours(self.gaussian_blur_img,
+                                           cv2.RETR_EXTERNAL,
+                                           cv2.CHAIN_APPROX_NONE)
+        
+        if not obj_contours:
+            print("Error: No main leaf contour found in gaussian_blur_img.")
+            return self.original_img
+
+        # Get the largest contour (the leaf)
+        main_contour = max(obj_contours, key=cv2.contourArea)
+
+        # Find top-most and bottom-most points
+        top_index = main_contour[:, :, 1].argmin()
+        bottom_index = main_contour[:, :, 1].argmax()
+
+        # Split the contour into left and right segments
+        if top_index < bottom_index:
+            segment1 = main_contour[top_index:bottom_index]
+            segment2 = np.concatenate((main_contour[bottom_index:],
+                                       main_contour[:top_index]))
+        else:
+            segment1 = main_contour[bottom_index:top_index]
+            segment2 = np.concatenate((main_contour[top_index:],
+                                       main_contour[:bottom_index]))
+
+        def sample_points_from_contour(contour, n_points):
+            """Sample n_points evenly from a contour"""
+            if len(contour) == 0:
+                return []
+            
+            indices = np.linspace(0, len(contour) - 1, n_points, dtype=int)
+            points = [tuple(contour[i][0]) for i in indices]
+            return points
+
+        # Sample 30 points from each segment
+        points_segment1 = sample_points_from_contour(segment1, 30)
+        points_segment2 = sample_points_from_contour(segment2, 30)
+
+        if self.masked_img is None:
+            self.mask()
+
+        gray = cv2.cvtColor(self.masked_img, cv2.COLOR_BGR2GRAY)
+        _, binary_disease = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY_INV)
+        
+        kernel = np.ones((3, 3), np.uint8)
+        binary_disease = cv2.morphologyEx(binary_disease, cv2.MORPH_OPEN, kernel)
+        binary_disease = cv2.morphologyEx(binary_disease, cv2.MORPH_CLOSE, kernel)
+        
+        disease_contours, _ = cv2.findContours(binary_disease,
+                                               cv2.RETR_EXTERNAL,
+                                               cv2.CHAIN_APPROX_SIMPLE)
+
+        # Draw segment 1 points in BLUE
+        for point in points_segment1:
+            cv2.circle(pseudolandmarks_img, point, 5, (255, 0, 0), -1)
+
+        # Draw segment 2 points in MAGENTA
+        for point in points_segment2:
+            cv2.circle(pseudolandmarks_img, point, 5, (255, 0, 255), -1)
+
+        # Draw disease contour points in ORANGE
+        for spot_contour in disease_contours:
+            if len(spot_contour) > 5:
+                disease_points = sample_points_from_contour(spot_contour, 15)
+                for point in disease_points:
+                    cv2.circle(pseudolandmarks_img, point, 4, (0, 60, 255), -1)
+
+        self.pseudolandmarks_img = pseudolandmarks_img
+        return self.pseudolandmarks_img
 
     def color_histogram(self):
         # TODO: Implement color histogram logic
@@ -228,26 +313,53 @@ class Transform:
 
 def transform_image(image_path):
     transform = Transform(image_path)
+    
+    # Process all images
     original_image = transform.load_image()
-
-    if original_image is not None:
-        cv2.imshow("Original Image", original_image)
-
     blurred_image = transform.gaussian_blur()
-    if blurred_image is not None:
-        cv2.imshow("Gaussian Blur", blurred_image)
-
     mask_image = transform.mask()
-    if mask_image is not None:
-        cv2.imshow("Mask Image", mask_image)
-
     roi_objects_img = transform.roi_objects()
-    if roi_objects_img is not None:
-        cv2.imshow("Roi Objects Image", roi_objects_img)
-
     analyzed_img = transform.analyze_object()
-    if analyzed_img is not None:
-        cv2.imshow("Analyze Objects Image", analyzed_img)
+    pseudolandmarks_img = transform.pseudolandmarks()
 
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # Create figure with 2 rows and 3 columns
+    fig, axes = plt.subplots(2, 3, figsize=(10, 7))
+    fig.suptitle('Leaf Image Transformation Pipeline', fontsize=14, fontweight='bold')
+
+    # Convert BGR to RGB for matplotlib (OpenCV uses BGR, matplotlib uses RGB)
+    def bgr_to_rgb(img):
+        if img is not None and len(img.shape) == 3:
+            return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        return img
+
+    # Row 1
+    axes[0, 0].imshow(bgr_to_rgb(original_image))
+    axes[0, 0].set_title('1. Original Image', fontsize=10, fontweight='bold')
+    axes[0, 0].axis('off')
+
+    axes[0, 1].imshow(blurred_image, cmap='gray')
+    axes[0, 1].set_title('2. Gaussian Blur Mask', fontsize=10, fontweight='bold')
+    axes[0, 1].axis('off')
+
+    axes[0, 2].imshow(bgr_to_rgb(mask_image))
+    axes[0, 2].set_title('3. Masked Image', fontsize=10, fontweight='bold')
+    axes[0, 2].axis('off')
+
+    # Row 2
+    axes[1, 0].imshow(bgr_to_rgb(roi_objects_img))
+    axes[1, 0].set_title('4. ROI Objects', fontsize=10, fontweight='bold')
+    axes[1, 0].axis('off')
+
+    axes[1, 1].imshow(bgr_to_rgb(analyzed_img))
+    axes[1, 1].set_title('5. Analyzed Object', fontsize=10, fontweight='bold')
+    axes[1, 1].axis('off')
+
+    axes[1, 2].imshow(bgr_to_rgb(pseudolandmarks_img))
+    axes[1, 2].set_title('6. Pseudolandmarks', fontsize=10, fontweight='bold')
+    axes[1, 2].axis('off')
+
+    # Adjust layout to prevent overlap
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.subplots_adjust(hspace=0.3)
+    
+    plt.show()
