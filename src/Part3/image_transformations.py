@@ -445,3 +445,97 @@ def transform_image(image_path):
     
     # Show both figures
     plt.show()
+
+
+"""
+Transforms all images in src_dir and saves each transformation
+as .png files in dst_dir with descriptive names.
+
+Args:
+    src_dir: Source directory containing images
+    dst_dir: Destination directory for transformed images
+"""
+def transform_directory(src_dir, dst_dir):
+    import os
+    from pathlib import Path
+    
+    # Validate source directory exists
+    if not os.path.exists(src_dir):
+        print(f"Error: Source directory '{src_dir}' does not exist.")
+        return
+    
+    if not os.path.isdir(src_dir):
+        print(f"Error: '{src_dir}' is not a directory.")
+        return
+    
+    # Get list of image files
+    valid_extensions = {'.jpg', '.jpeg', '.png'}
+    image_files = [f for f in os.listdir(src_dir) 
+                   if os.path.isfile(os.path.join(src_dir, f)) 
+                   and os.path.splitext(f.lower())[1] in valid_extensions]
+    
+    if not image_files:
+        print(f"Error: No valid images found in '{src_dir}'.")
+        print(f"Supported formats: {', '.join(valid_extensions)}")
+        return
+    
+    # Create destination directory if it doesn't exist
+    os.makedirs(dst_dir, exist_ok=True)
+    print(f"Destination directory: {dst_dir}")
+    
+    # Process each image
+    total_images = len(image_files)
+    print(f"\nProcessing {total_images} images...\n")
+    
+    for idx, image_file in enumerate(image_files, 1):
+        image_path = os.path.join(src_dir, image_file)
+        base_name = os.path.splitext(image_file)[0]
+        
+        print(f"[{idx}/{total_images}] Processing: {image_file}")
+        
+        try:
+            # Create transform instance
+            transform = Transform(image_path)
+            
+            # Process all transformations
+            original_image = transform.load_image()
+            if original_image is None:
+                print(f"Skipped: Could not read image")
+                continue
+            
+            blurred_image = transform.gaussian_blur()
+            mask_image = transform.mask()
+            roi_objects_image = transform.roi_objects()
+            analyzed_image = transform.analyze_object()
+            pseudolandmarks_image = transform.pseudolandmarks()
+            histogram_fig = transform.color_histogram()
+            
+            # Save all transformations
+            transformations = [
+                (original_image, f"{base_name}_1_original.png"),
+                (blurred_image, f"{base_name}_2_gaussian_blur.png"),
+                (mask_image, f"{base_name}_3_mask.png"),
+                (roi_objects_image, f"{base_name}_4_roi_objects.png"),
+                (analyzed_image, f"{base_name}_5_analyzed.png"),
+                (pseudolandmarks_image, f"{base_name}_6_pseudolandmarks.png")
+            ]
+            
+            for img, filename in transformations:
+                if img is not None:
+                    output_path = os.path.join(dst_dir, filename)
+                    cv2.imwrite(output_path, img)
+            
+            # Save histogram as PNG
+            if histogram_fig is not None:
+                histogram_path = os.path.join(dst_dir, f"{base_name}_7_color_histogram.png")
+                histogram_fig.savefig(histogram_path, dpi=150, bbox_inches='tight')
+                plt.close(histogram_fig)
+            
+            print(f"Saved 7 transformations (6 images + 1 histogram)")
+            
+        except Exception as e:
+            print(f"Error processing image: {str(e)}")
+            continue
+    
+    print(f"\nProcessing complete! All images saved to: {dst_dir}")
+
