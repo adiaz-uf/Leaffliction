@@ -30,6 +30,9 @@ class Transform:
         # Pseudolandmarks image
         self.pseudolandmarks_img = None
 
+        # Histogram
+        self.color_histogram_img = None
+
     def load_image(self):
         image = cv2.imread(self.img_path)
         if image is None:
@@ -306,9 +309,86 @@ class Transform:
         self.pseudolandmarks_img = pseudolandmarks_img
         return self.pseudolandmarks_img
 
+    """
+    Generates a 9-channel color histogram (Figure IV.7) for the
+    masked leaf pixels using BGR, HSV, and L*a*b color spaces.
+    """
     def color_histogram(self):
-        # TODO: Implement color histogram logic
-        pass
+        if self.original_img is None:
+            self.load_image()
+        if self.gaussian_blur_img is None:
+            self.gaussian_blur()
+        
+        # Convert to HSV
+        hsv_img = cv2.cvtColor(self.original_img, cv2.COLOR_BGR2HSV)
+        # Convert to L*a*b*
+        lab_img = cv2.cvtColor(self.original_img, cv2.COLOR_BGR2Lab)
+        
+        # Split all channels
+        b, g, r = cv2.split(self.original_img)
+        h, s, v = cv2.split(hsv_img)
+        l, a, b_lab = cv2.split(lab_img)
+        
+        # Data structure: (channel_data, label, color_code)
+        channels_to_plot = [
+            (b, 'blue', 'blue'),
+            (b_lab, 'blue-yellow', 'yellow'),
+            (g, 'green', 'green'),
+            (a, 'green-magenta', 'magenta'),
+            (h, 'hue', 'purple'),
+            (l, 'lightness', 'gray'),
+            (r, 'red', 'red'),
+            (s, 'saturation', 'cyan'),
+            (v, 'value', 'orange')
+        ]
+
+        plt.style.use('ggplot')
+        fig, ax = plt.subplots(figsize=(12, 7))
+
+        # --- Calculate and Plot Histograms ---
+        
+        # Get the total number of non-zero pixels in the mask (our 100%)
+        total_pixels = np.count_nonzero(self.gaussian_blur_img)
+        if total_pixels == 0:
+            print("Error: Mask is empty, cannot calculate histogram.")
+            plt.close(fig)
+            return None
+
+        for channel_data, label, color in channels_to_plot:
+            # Calculate histogram ONLY for the masked area
+            hist = cv2.calcHist(
+                images=[channel_data], 
+                channels=[0], 
+                mask=self.gaussian_blur_img, # This is the key
+                histSize=[256], 
+                ranges=[0, 256]
+            )
+            
+            # Normalize to get proportion (%)
+            hist_percent = (hist / total_pixels) * 100
+            
+            # Plot the histogram line
+            ax.plot(hist_percent, color=color, label=label, linewidth=2.5)
+
+        # Format Plot
+        ax.set_xlabel("Pixel intensity", fontsize=12)
+        ax.set_ylabel("Proportion of pixels (%)", fontsize=12)
+        ax.set_title("Figure IV.7: Color Histogram", fontsize=14, fontweight='bold')
+        
+        # Add legend outside the plot area
+        legend = ax.legend(title="Color Channel", bbox_to_anchor=(1.02, 1), loc='upper left')
+        legend.get_title().set_fontweight('bold')
+        
+        # Set axis limits
+        ax.set_xlim(0, 255)
+        ax.set_ylim(bottom=0)
+        
+        # Adjust layout to make space for the legend
+        fig.tight_layout(rect=[0, 0, 0.85, 1]) 
+        
+        # Store and return the figure
+        self.color_histogram_fig = fig
+        return self.color_histogram_fig
 
 
 def transform_image(image_path):
@@ -321,6 +401,7 @@ def transform_image(image_path):
     roi_objects_img = transform.roi_objects()
     analyzed_img = transform.analyze_object()
     pseudolandmarks_img = transform.pseudolandmarks()
+    color_hist_fig = transform.color_histogram()
 
     # Create figure with 2 rows and 3 columns
     fig, axes = plt.subplots(2, 3, figsize=(10, 7))
@@ -362,4 +443,5 @@ def transform_image(image_path):
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.subplots_adjust(hspace=0.3)
     
+    # Show both figures
     plt.show()
