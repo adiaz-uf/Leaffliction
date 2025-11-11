@@ -1,9 +1,10 @@
 import cv2
 import numpy as np
 import matplotlib
-matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 from plantcv import plantcv as pcv
+
+matplotlib.use('Qt5Agg')
 
 # !IMPORTANT: export QT_QPA_PLATFORM=wayland to show windows
 
