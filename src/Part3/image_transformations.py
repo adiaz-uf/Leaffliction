@@ -1,3 +1,4 @@
+import os
 import cv2
 import numpy as np
 import matplotlib
@@ -7,6 +8,7 @@ from plantcv import plantcv as pcv
 matplotlib.use('Qt5Agg')
 
 # !IMPORTANT: export QT_QPA_PLATFORM=wayland to show windows
+
 
 class Transform:
     def __init__(self, img_path):
@@ -243,7 +245,7 @@ class Transform:
         obj_contours, _ = cv2.findContours(self.gaussian_blur_img,
                                            cv2.RETR_EXTERNAL,
                                            cv2.CHAIN_APPROX_NONE)
-        
+
         if not obj_contours:
             print("Error: No main leaf contour found in gaussian_blur_img.")
             return self.original_img
@@ -269,7 +271,7 @@ class Transform:
             """Sample n_points evenly from a contour"""
             if len(contour) == 0:
                 return []
-            
+
             indices = np.linspace(0, len(contour) - 1, n_points, dtype=int)
             points = [tuple(contour[i][0]) for i in indices]
             return points
@@ -282,12 +284,15 @@ class Transform:
             self.mask()
 
         gray = cv2.cvtColor(self.masked_img, cv2.COLOR_BGR2GRAY)
-        _, binary_disease = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY_INV)
-        
+        _, binary_disease = cv2.threshold(gray, 250, 255,
+                                          cv2.THRESH_BINARY_INV)
+
         kernel = np.ones((3, 3), np.uint8)
-        binary_disease = cv2.morphologyEx(binary_disease, cv2.MORPH_OPEN, kernel)
-        binary_disease = cv2.morphologyEx(binary_disease, cv2.MORPH_CLOSE, kernel)
-        
+        binary_disease = cv2.morphologyEx(binary_disease, cv2.MORPH_OPEN,
+                                          kernel)
+        binary_disease = cv2.morphologyEx(binary_disease, cv2.MORPH_CLOSE,
+                                          kernel)
+
         disease_contours, _ = cv2.findContours(binary_disease,
                                                cv2.RETR_EXTERNAL,
                                                cv2.CHAIN_APPROX_SIMPLE)
@@ -305,7 +310,8 @@ class Transform:
             if len(spot_contour) > 5:
                 disease_points = sample_points_from_contour(spot_contour, 15)
                 for point in disease_points:
-                    cv2.circle(pseudolandmarks_img, point, 4, (0, 60, 255), -1)
+                    cv2.circle(pseudolandmarks_img, point, 4, (0, 60, 255),
+                               -1)
 
         self.pseudolandmarks_img = pseudolandmarks_img
         return self.pseudolandmarks_img
@@ -319,17 +325,17 @@ class Transform:
             self.load_image()
         if self.gaussian_blur_img is None:
             self.gaussian_blur()
-        
+
         # Convert to HSV
         hsv_img = cv2.cvtColor(self.original_img, cv2.COLOR_BGR2HSV)
         # Convert to L*a*b*
         lab_img = cv2.cvtColor(self.original_img, cv2.COLOR_BGR2Lab)
-        
+
         # Split all channels
         b, g, r = cv2.split(self.original_img)
         h, s, v = cv2.split(hsv_img)
         l, a, b_lab = cv2.split(lab_img)
-        
+
         # Data structure: (channel_data, label, color_code)
         channels_to_plot = [
             (b, 'blue', 'blue'),
@@ -347,7 +353,7 @@ class Transform:
         fig, ax = plt.subplots(figsize=(12, 7))
 
         # --- Calculate and Plot Histograms ---
-        
+
         # Get the total number of non-zero pixels in the mask (our 100%)
         total_pixels = np.count_nonzero(self.gaussian_blur_img)
         if total_pixels == 0:
@@ -358,35 +364,37 @@ class Transform:
         for channel_data, label, color in channels_to_plot:
             # Calculate histogram ONLY for the masked area
             hist = cv2.calcHist(
-                images=[channel_data], 
-                channels=[0], 
-                mask=self.gaussian_blur_img, # This is the key
-                histSize=[256], 
+                images=[channel_data],
+                channels=[0],
+                mask=self.gaussian_blur_img,
+                histSize=[256],
                 ranges=[0, 256]
             )
-            
+
             # Normalize to get proportion (%)
             hist_percent = (hist / total_pixels) * 100
-            
+
             # Plot the histogram line
             ax.plot(hist_percent, color=color, label=label, linewidth=2.5)
 
         # Format Plot
         ax.set_xlabel("Pixel intensity", fontsize=12)
         ax.set_ylabel("Proportion of pixels (%)", fontsize=12)
-        ax.set_title("Figure IV.7: Color Histogram", fontsize=14, fontweight='bold')
-        
+        ax.set_title("Figure IV.7: Color Histogram", fontsize=14,
+                     fontweight='bold')
+
         # Add legend outside the plot area
-        legend = ax.legend(title="Color Channel", bbox_to_anchor=(1.02, 1), loc='upper left')
+        legend = ax.legend(title="Color Channel", bbox_to_anchor=(1.02, 1),
+                           loc='upper left')
         legend.get_title().set_fontweight('bold')
-        
+
         # Set axis limits
         ax.set_xlim(0, 255)
         ax.set_ylim(bottom=0)
-        
+
         # Adjust layout to make space for the legend
-        fig.tight_layout(rect=[0, 0, 0.85, 1]) 
-        
+        fig.tight_layout(rect=[0, 0, 0.85, 1])
+
         # Store and return the figure
         self.color_histogram_fig = fig
         return self.color_histogram_fig
@@ -394,7 +402,7 @@ class Transform:
 
 def transform_image(image_path):
     transform = Transform(image_path)
-    
+
     # Process all images
     original_image = transform.load_image()
     blurred_image = transform.gaussian_blur()
@@ -402,11 +410,12 @@ def transform_image(image_path):
     roi_objects_img = transform.roi_objects()
     analyzed_img = transform.analyze_object()
     pseudolandmarks_img = transform.pseudolandmarks()
-    color_hist_fig = transform.color_histogram()
+    transform.color_histogram()
 
     # Create figure with 2 rows and 3 columns
     fig, axes = plt.subplots(2, 3, figsize=(10, 7))
-    fig.suptitle('Leaf Image Transformation Pipeline', fontsize=14, fontweight='bold')
+    fig.suptitle('Leaf Image Transformation Pipeline', fontsize=14,
+                 fontweight='bold')
 
     # Convert BGR to RGB for matplotlib (OpenCV uses BGR, matplotlib uses RGB)
     def bgr_to_rgb(img):
@@ -420,7 +429,8 @@ def transform_image(image_path):
     axes[0, 0].axis('off')
 
     axes[0, 1].imshow(blurred_image, cmap='gray')
-    axes[0, 1].set_title('2. Gaussian Blur Mask', fontsize=10, fontweight='bold')
+    axes[0, 1].set_title('2. Gaussian Blur Mask', fontsize=10,
+                         fontweight='bold')
     axes[0, 1].axis('off')
 
     axes[0, 2].imshow(bgr_to_rgb(mask_image))
@@ -443,74 +453,71 @@ def transform_image(image_path):
     # Adjust layout to prevent overlap
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.subplots_adjust(hspace=0.3)
-    
+
     # Show both figures
     plt.show()
 
 
-"""
-Transforms all images in src_dir and saves each transformation
-as .png files in dst_dir with descriptive names.
-
-Args:
-    src_dir: Source directory containing images
-    dst_dir: Destination directory for transformed images
-"""
 def transform_directory(src_dir, dst_dir):
-    import os
-    from pathlib import Path
-    
-    # Validate source directory exists
+    """
+    Transforms all images in src_dir and saves each transformation
+    as .png files in dst_dir with descriptive names.
+
+    Args:
+        src_dir: Source directory containing images
+        dst_dir: Destination directory for transformed images
+    """
+
     if not os.path.exists(src_dir):
         print(f"Error: Source directory '{src_dir}' does not exist.")
         return
-    
+
     if not os.path.isdir(src_dir):
         print(f"Error: '{src_dir}' is not a directory.")
         return
-    
+
     # Get list of image files
     valid_extensions = {'.jpg', '.jpeg', '.png'}
-    image_files = [f for f in os.listdir(src_dir) 
-                   if os.path.isfile(os.path.join(src_dir, f)) 
+    image_files = [f for f in os.listdir(src_dir)
+                   if os.path.isfile(os.path.join(src_dir, f))
                    and os.path.splitext(f.lower())[1] in valid_extensions]
-    
+
     if not image_files:
         print(f"Error: No valid images found in '{src_dir}'.")
         print(f"Supported formats: {', '.join(valid_extensions)}")
         return
-    
+
     # Create destination directory if it doesn't exist
     os.makedirs(dst_dir, exist_ok=True)
     print(f"Destination directory: {dst_dir}")
-    
+
     # Process each image
     total_images = len(image_files)
     print(f"\nProcessing {total_images} images...\n")
-    
+
     for idx, image_file in enumerate(image_files, 1):
         image_path = os.path.join(src_dir, image_file)
         base_name = os.path.splitext(image_file)[0]
-        
+
         print(f"[{idx}/{total_images}] Processing: {image_file}")
-        
+
         try:
             # Create transform instance
             transform = Transform(image_path)
-            
+
             # Process all transformations
             original_image = transform.load_image()
             if original_image is None:
-                print(f"Skipped: Could not read image")
+                print("Skipped: Could not read image")
                 continue
-            
+
             blurred_image = transform.gaussian_blur()
             mask_image = transform.mask()
             roi_objects_image = transform.roi_objects()
             analyzed_image = transform.analyze_object()
             pseudolandmarks_image = transform.pseudolandmarks()
             histogram_fig = transform.color_histogram()
-            
+
             # Save all transformations
             transformations = [
                 (original_image, f"{base_name}_1_original.png"),
@@ -520,23 +527,24 @@ def transform_directory(src_dir, dst_dir):
                 (analyzed_image, f"{base_name}_5_analyzed.png"),
                 (pseudolandmarks_image, f"{base_name}_6_pseudolandmarks.png")
             ]
-            
+
             for img, filename in transformations:
                 if img is not None:
                     output_path = os.path.join(dst_dir, filename)
                     cv2.imwrite(output_path, img)
-            
+
             # Save histogram as PNG
             if histogram_fig is not None:
-                histogram_path = os.path.join(dst_dir, f"{base_name}_7_color_histogram.png")
-                histogram_fig.savefig(histogram_path, dpi=150, bbox_inches='tight')
+                extension = f"{base_name}_7_color_histogram.png"
+                histogram_path = os.path.join(dst_dir, extension)
+                histogram_fig.savefig(histogram_path, dpi=150,
+                                      bbox_inches='tight')
                 plt.close(histogram_fig)
-            
-            print(f"Saved 7 transformations (6 images + 1 histogram)")
-            
+
+            print("Saved 7 transformations (6 images + 1 histogram)")
+
         except Exception as e:
             print(f"Error processing image: {str(e)}")
             continue
-    
-    print(f"\nProcessing complete! All images saved to: {dst_dir}")
 
+    print(f"\nProcessing complete! All images saved to: {dst_dir}")
