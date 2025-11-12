@@ -57,7 +57,8 @@ def skew_image(image):
             [[int(width * skew_amount), 0], [width, 0], [0, height]])
         M = cv2.getAffineTransform(pts1, pts2)
         image = cv2.warpAffine(image, M, (width, height),
-                               borderMode=border_mode, borderValue=border_value)
+                               borderMode=border_mode,
+                               borderValue=border_value)
 
     if skew_type == 'vertical' or skew_type == 'both':
         pts1 = np.float32([[0, 0], [width, 0], [0, height]])
@@ -65,7 +66,8 @@ def skew_image(image):
             [[0, int(height * skew_amount)], [width, 0], [0, height]])
         M = cv2.getAffineTransform(pts1, pts2)
         image = cv2.warpAffine(image, M, (width, height),
-                               borderMode=border_mode, borderValue=border_value)
+                               borderMode=border_mode,
+                               borderValue=border_value)
 
     return image
 
@@ -280,12 +282,13 @@ if __name__ == "__main__":
                     # save file to augmented data folder
                     augmented_path = './data/augmented/' + subdir
                     try:
-                        for image_name in images:
+                        for img_name in images:
                             if not os.path.exists(augmented_path):
                                 os.makedirs(augmented_path)
                             save_path = os.path.join(
-                                augmented_path, f'{os.path.splitext(file)[0]}_{image_name}.jpg')
-                            cv2.imwrite(save_path, images[image_name])
+                                augmented_path,
+                                f'{os.path.splitext(file)[0]}_{img_name}.jpg')
+                            cv2.imwrite(save_path, images[img_name])
                     except Exception as e:
                         print(f'Error saving file {filePath}: {e}')
         print(f'Processed {file_count} files.')
@@ -299,7 +302,9 @@ if __name__ == "__main__":
                 for image_name in images:
                     if not os.path.exists(augmented_path):
                         os.makedirs(augmented_path)
-                    save_path = f'{augmented_path}/{os.path.splitext(os.path.basename(subdir))[0]}_{image_name}.jpg'
+                    save_path = f'{augmented_path}/ \
+                    {os.path.splitext(os.path.basename
+                                      (subdir))[0]}_{image_name}.jpg'
                     cv2.imwrite(save_path, images[image_name])
                 print("Success! File saved")
             except Exception as e:
