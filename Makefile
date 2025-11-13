@@ -19,13 +19,10 @@ augmentation-one:
 	@venv/bin/python3 src/Part2/Augmentation.py "apple/Apple_Black_rot/image (1).JPG"
 
 train:
-	@venv/bin/python3 src/Part4/train.py data/original
+	@venv/bin/python3 src/Part4/train.py data/augmented/augmented_to_train
 
-train-apple:
-	@venv/bin/python3 src/Part4/train.py data/original/apple
-
-train-grape:
-	@venv/bin/python3 src/Part4/train.py data/original/grape
+predict:
+	@venv/bin/python3 src/Part4/predict.py data/original/Apple/Apple_rust/image\ \(56\).JPG
 
 jupyter:
 	@venv/bin/jupyter lab

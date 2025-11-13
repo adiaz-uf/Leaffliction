@@ -164,9 +164,9 @@ def train_model(model, train_data, val_data, epochs=20):
 def evaluate_and_save(model, val_data, train_data):
     val_loss, val_acc = model.evaluate(val_data, verbose=0)
     if val_acc >= .90:
-        print("✅ Model meets 90% accuracy requirement!")
+        print(f"Model meets 90% accuracy requirement!: {val_acc}")
     else:
-        print("❌ Model does not meet 90% accuracy requirement.")
+        print("Model does not meet 90% accuracy requirement.")
 
     class_indices = train_data.class_indices
     with open('class_indices.json', 'w') as f:
@@ -188,7 +188,7 @@ def main(folder_path):
     model.summary()
 
     print("\n[3/4] Training model\n")
-    history = train_model(model, train_data, val_data, epochs=20)
+    history = train_model(model, train_data, val_data, epochs=1)
 
     print("\n[4/4] Training complete. Model saved as 'leaf_disease_model.h5'\n")
     evaluate_and_save(model, val_data, train_data)
