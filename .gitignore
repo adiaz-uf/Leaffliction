@@ -9,3 +9,5 @@ augmented/
 data/transformed/Apple
 data/transformed/Grape
 data_split
+*.h5
+class_indices.json

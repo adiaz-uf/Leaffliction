@@ -8,3 +8,4 @@ flake8
 opencv-python
 plantcv
 scipy
+tensorflow
