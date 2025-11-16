@@ -4,18 +4,10 @@ import cv2
 from scipy.ndimage import map_coordinates, gaussian_filter
 import matplotlib.pyplot as plt
 
+import img_functions
 from img_functions import flip_image, rotate_image, skew_image, shear_image, crop_image, distort_image, projective_transform
 
-# Data path
-data_path = './data/original/'
-# Library const values
-BORDER_DARK = cv2.BORDER_CONSTANT
-BORDER_VALUE_DARK = (0, 0, 0)
-BORDER_REFLECT = cv2.BORDER_REFLECT
-BORDER_VALUE_REFLECT = None
-
-border_mode = BORDER_DARK
-border_value = BORDER_VALUE_DARK
+generated_images = 0
 
 
 def display_images(augmented_images):
@@ -64,60 +56,147 @@ def make_augmentations(filePath, verbose=True):
     return all_images
 
 
+def augment_train_data(dir_info, max_images):
+    global generated_images
+    print(f"Augmenting {dir_info['dir']} data...")
+    print(f"Needed images: {max_images}, Current images: {dir_info['len']}\n")
+    needed_images = max_images - dir_info['len']
+    augmented_path = os.path.join(
+        './data/augmented/augmented_to_train', dir_info['dir'])
+
+    # Copy original images to augmented directory
+    if not os.path.exists(augmented_path):
+        os.makedirs(augmented_path)
+    for file in dir_info['files']:
+        src_file_path = os.path.join(dir_info['full_path'], file)
+        dst_file_path = os.path.join(augmented_path, file)
+        try:
+            if not os.path.exists(dst_file_path):
+                cv2.imwrite(dst_file_path, cv2.imread(src_file_path))
+        except Exception as e:
+            print(
+                f'Error copying file {src_file_path}')
+
+    if needed_images <= 0:
+        return
+
+    # Generate augmented images if needed
+    for file in dir_info['files']:
+        file_path = os.path.join(dir_info['full_path'], file)
+        result = make_augmentations(file_path, verbose=False)
+        if result is None:
+            continue
+        if needed_images <= 0:
+            break
+
+        try:
+            for i, image_name in enumerate(result):
+                if image_name == "Original":
+                    continue
+                if needed_images <= 0:
+                    return
+                save_path = os.path.join(
+                    augmented_path, f'{os.path.splitext(file)[0]}_{image_name}.jpg')
+                cv2.imwrite(save_path, result[image_name])
+                needed_images -= 1
+                generated_images += 1
+        except Exception as e:
+            print(f'Error saving file {file_path}: {e}')
+
+
 if __name__ == "__main__":
+    use_for_train = False  # Indicate if augmentations are for training data - default False
     if len(sys.argv) < 2:
         print('Error! Usage is: ./Augmentation.py <file_path>')
+        print('Use -h for all options')
         sys.exit(1)
 
-    subdir = sys.argv[1]
+    if "-h" in sys.argv:
+        print('Usage: ./Augmentation.py <file_path or directory> [options]\n')
+        print("If a file path is provided, the augmented image will be displayed.")
+        print("If a directory path is provided, all images in the directory will be processed and saved to './data/augmented/<subdir>/'\n")
+        print('Options:')
+        print('  -r    Use reflect border mode for augmentations')
+        print('  -t    Make augmentations suitable for training')
+        print('  -h    Show this help message')
+        sys.exit(0)
+
+    folder_path = sys.argv[1]
 
     if "-r" in sys.argv:
-        border_mode = BORDER_REFLECT
-        border_value = BORDER_VALUE_REFLECT
+        img_functions.border_mode = img_functions.BORDER_REFLECT
+        img_functions.border_value = img_functions.BORDER_VALUE_REFLECT
 
-    if os.path.isdir(data_path + subdir):
-        file_count = 0
+    # If just a file, show augmented images
+    if os.path.isfile(folder_path):
+        images = make_augmentations(folder_path)
+        if images is not None:
+            display_images(images)
+            exit(0)
+        else:
+            print('Error: images could not be processed.')
+            exit(2)
 
-        for root, dirs, files in os.walk(os.path.join(data_path, subdir)):
-            for file in files:
-                filePath = os.path.join(root, file)
-                if os.path.isfile(filePath):
+    if "-t" in sys.argv:
+        use_for_train = True
+
+    print(folder_path)
+    file_count = 0
+    if os.path.isdir(folder_path):
+        values = []
+        max_images = 1000
+
+        """ get files in each subdirectory """
+        for root, dirs, files in os.walk(folder_path):
+            if len(files) > 0:
+                values.append(
+                    {
+                        "dir": os.path.split(root)[1],
+                        "full_path": root,
+                        "files": files,
+                        "len": len(files)
+                    }
+                )
+                if len(files) > max_images:
+                    max_images = len(files)
+
+        if len(values) == 0:
+            print('Error! No files found in the specified directory')
+            sys.exit(3)
+
+        if use_for_train:
+            """ augment data for training """
+            print("-- Starting data augmentation... --\n")
+            for item in values:
+                augment_train_data(item, max_images)
+            print(f'New generated images total: {generated_images}')
+            exit(0)
+
+        else:
+            """ save augmented images to augmented data folder """
+            for item in values:
+                augmented_path = os.path.join(
+                    './data/augmented/', item['dir'])
+                for file in item['files']:
                     file_count += 1
-                    result = make_augmentations(filePath)
+                    file_path = os.path.join(item['full_path'], file)
+                    print(f'Processing file: {file_path}')
+                    result = make_augmentations(file_path, verbose=False)
                     if result is None:
                         continue
 
-                    images = result
-                    # save file to augmented data folder
-                    augmented_path = './data/augmented/' + subdir
+                    # Save augmented image
                     try:
-                        for img_name in images:
-                            if not os.path.exists(augmented_path):
-                                os.makedirs(augmented_path)
+                        for i, image_name in enumerate(result):
                             save_path = os.path.join(
-                                augmented_path,
-                                f'{os.path.splitext(file)[0]}_{img_name}.jpg')
-                            cv2.imwrite(save_path, images[img_name])
+                                augmented_path, f'{os.path.splitext(file)[0]}_{image_name}.jpg')
+                            cv2.imwrite(save_path, result[image_name])
+                            generated_images += 1
                     except Exception as e:
-                        print(f'Error saving file {filePath}: {e}')
-        print(f'Processed {file_count} files.')
+                        print(f'Error saving file {file_path}: {e}')
+            print(f'Processed {file_count} files.')
+            print(f'Saved images  total: {generated_images}')
+            exit(0)
 
-    elif os.path.isfile(data_path + subdir):
-        images = make_augmentations(data_path + subdir)
-        if images is not None:
-            display_images(images)
-            augmented_path = './data/augmented/' + os.path.dirname(subdir)
-            try:
-                for image_name in images:
-                    if not os.path.exists(augmented_path):
-                        os.makedirs(augmented_path)
-                    save_path = f'{augmented_path}/ \
-                    {os.path.splitext(os.path.basename
-                                      (subdir))[0]}_{image_name}.jpg'
-                    cv2.imwrite(save_path, images[image_name])
-                print("Success! File saved")
-            except Exception as e:
-                print(f'Error saving file: {e}')
-    else:
-        print('Error! Invalid file or directory')
-        sys.exit(2)
+    print('Error! Invalid file or directory')
+    sys.exit(2)

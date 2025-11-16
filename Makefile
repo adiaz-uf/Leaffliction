@@ -1,5 +1,3 @@
-.PHONY: all create-venv install-deps jupyter
-
 all: create-venv install-deps
 
 create-venv:
@@ -10,13 +8,19 @@ install-deps:
 	venv/bin/pip install -r requirements.txt
 
 augmentation-apple:
-	@venv/bin/python3 src/Part2/Augmentation.py Apple
+	@venv/bin/python3 src/Part2/Augmentation.py data/original/Apple
+
+augmentation-apple-train:
+	@venv/bin/python3 src/Part2/Augmentation.py data/original/Apple -t
 
 augmentation-grape:
-	@venv/bin/python3 src/Part2/Augmentation.py Grape
+	@venv/bin/python3 src/Part2/Augmentation.py data/original/Grape
+
+augmentation-grape-train:
+	@venv/bin/python3 src/Part2/Augmentation.py data/original/Grape -t
 
 augmentation-one:
-	@venv/bin/python3 src/Part2/Augmentation.py "apple/Apple_Black_rot/image (1).JPG"
+	@venv/bin/python3 src/Part2/Augmentation.py "data/original/Apple/Apple_Black_rot/image (1).JPG"
 
 train:
 	@venv/bin/python3 src/Part4/train.py data/augmented/augmented_to_train
@@ -26,3 +30,6 @@ predict:
 
 jupyter:
 	@venv/bin/jupyter lab
+
+
+.PHONY: all create-venv install-deps jupyter

@@ -2,7 +2,16 @@ import cv2
 import random
 import numpy as np
 from scipy.ndimage import map_coordinates, gaussian_filter
-from Augmentation import border_mode, border_value
+
+# Library const values
+BORDER_DARK = cv2.BORDER_CONSTANT
+BORDER_VALUE_DARK = (0, 0, 0)
+BORDER_REFLECT = cv2.BORDER_REFLECT
+BORDER_VALUE_REFLECT = None
+
+border_mode = BORDER_DARK
+border_value = BORDER_VALUE_DARK
+
 
 def flip_image(image):
     flip_type = random.choice(['horizontal', 'vertical', 'both'])
