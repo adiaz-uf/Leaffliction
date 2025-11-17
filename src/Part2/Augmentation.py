@@ -1,11 +1,11 @@
 import sys
 import os
 import cv2
-from scipy.ndimage import map_coordinates, gaussian_filter
 import matplotlib.pyplot as plt
 
 import img_functions
-from img_functions import flip_image, rotate_image, skew_image, shear_image, crop_image, distort_image, projective_transform
+from img_functions import flip_image, rotate_image, skew_image, shear_image
+from img_functions import crop_image, distort_image, projective_transform
 
 generated_images = 0
 
@@ -73,7 +73,7 @@ def augment_train_data(dir_info, max_images):
         try:
             if not os.path.exists(dst_file_path):
                 cv2.imwrite(dst_file_path, cv2.imread(src_file_path))
-        except Exception as e:
+        except Exception:
             print(
                 f'Error copying file {src_file_path}')
 
@@ -96,7 +96,8 @@ def augment_train_data(dir_info, max_images):
                 if needed_images <= 0:
                     return
                 save_path = os.path.join(
-                    augmented_path, f'{os.path.splitext(file)[0]}_{image_name}.jpg')
+                    augmented_path,
+                    f'{os.path.splitext(file)[0]}_{image_name}.jpg')
                 cv2.imwrite(save_path, result[image_name])
                 needed_images -= 1
                 generated_images += 1
@@ -105,7 +106,7 @@ def augment_train_data(dir_info, max_images):
 
 
 if __name__ == "__main__":
-    use_for_train = False  # Indicate if augmentations are for training data - default False
+    use_for_train = False  # Indicate if augmentations are for training data
     if len(sys.argv) < 2:
         print('Error! Usage is: ./Augmentation.py <file_path>')
         print('Use -h for all options')
@@ -113,8 +114,11 @@ if __name__ == "__main__":
 
     if "-h" in sys.argv:
         print('Usage: ./Augmentation.py <file_path or directory> [options]\n')
-        print("If a file path is provided, the augmented image will be displayed.")
-        print("If a directory path is provided, all images in the directory will be processed and saved to './data/augmented/<subdir>/'\n")
+        print("If a file path is provided,"
+              " the augmented image will be displayed.")
+        print(
+            "If a directory path is provided, all images in the directory will"
+            " be processed and saved to './data/augmented/<subdir>/'\n")
         print('Options:')
         print('  -r    Use reflect border mode for augmentations')
         print('  -t    Make augmentations suitable for training')
@@ -187,13 +191,14 @@ if __name__ == "__main__":
 
                     # Save augmented image
                     try:
-                        for i, image_name in enumerate(result):
+                        for i, img_name in enumerate(result):
                             save_path = os.path.join(
-                                augmented_path, f'{os.path.splitext(file)[0]}_{image_name}.jpg')
-                            cv2.imwrite(save_path, result[image_name])
+                                augmented_path,
+                                f'{os.path.splitext(file)[0]}_{img_name}.jpg')
+                            cv2.imwrite(save_path, result[img_name])
                             generated_images += 1
-                    except Exception as e:
-                        print(f'Error saving file {file_path}: {e}')
+                    except Exception:
+                        print(f'Error saving file {file_path}')
             print(f'Processed {file_count} files.')
             print(f'Saved images  total: {generated_images}')
             exit(0)

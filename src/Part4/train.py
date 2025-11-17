@@ -1,6 +1,5 @@
 import os
 import sys
-import cv2
 import json
 import tensorflow as tf
 from tensorflow.keras import layers, models
@@ -134,9 +133,10 @@ def main(folder_path):
     model.summary()
 
     print("\n[3/4] Training model\n")
-    history = train_model(model, train_data, val_data, epochs=2)
+    train_model(model, train_data, val_data, epochs=2)
 
-    print("\n[4/4] Training complete. Model saved as 'leaf_disease_model.h5'\n")
+    print(
+        "\n[4/4] Training complete. Model saved as 'leaf_disease_model.h5'\n")
     evaluate_and_save(model, val_data, train_data)
 
     print("\n --Training Complete--\n")
