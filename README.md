@@ -2,6 +2,13 @@
 
 Computer vision: Image classification by disease recognition on leaves
 
+## Part 1: Analysis of the Data Set
+
+<img width="1512" height="776" alt="Screenshot 2025-11-17 at 12 30 51" src="https://github.com/user-attachments/assets/e829faaf-8b58-4091-9102-0c876c4ca517" />
+
+## Part 2: Data augmentation
+
+<img width="1612" height="976" alt="Screenshot 2025-11-17 at 12 30 21" src="https://github.com/user-attachments/assets/09e449ed-a35e-41bd-a697-9451f4aadf46" />
 
 ## Part 3: Image transformations
 
