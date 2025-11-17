@@ -1,5 +1,3 @@
-jupyterlab
-seaborn
 pandas
 matplotlib
 numpy
@@ -9,3 +7,4 @@ opencv-python
 plantcv
 scipy
 tensorflow
+altair<6,>=5.0.0
