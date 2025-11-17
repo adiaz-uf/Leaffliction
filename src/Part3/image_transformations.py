@@ -395,9 +395,9 @@ class Transform:
         # Adjust layout to make space for the legend
         fig.tight_layout(rect=[0, 0, 0.85, 1])
 
-        # Store and return the figure
-        self.color_histogram_fig = fig
-        return self.color_histogram_fig
+        # Save the figure
+        plt.savefig("img/color_histogram.png", dpi=150, bbox_inches='tight')
+        plt.close(fig)
 
     def remove_background(self):
         if self.original_img is None:
@@ -539,7 +539,8 @@ def transform_image(image_path):
     plt.subplots_adjust(hspace=0.3)
 
     # Show both figures
-    plt.show()
+    plt.savefig("img/transformations.png", bbox_inches='tight')
+    plt.close()
 
 
 def transform_directory(src_dir, dst_dir):

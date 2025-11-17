@@ -29,7 +29,8 @@ def display_images(augmented_images):
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.subplots_adjust(hspace=0.3, wspace=0.2)
-    plt.show()
+    plt.savefig("img/augmentations.png", bbox_inches='tight')
+    plt.close()
 
 
 def make_augmentations(filePath, verbose=True):

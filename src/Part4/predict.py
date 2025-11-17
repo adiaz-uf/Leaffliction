@@ -195,7 +195,8 @@ def display_prediction_result(image_path, predicted_class, confidence):
 
     ax_text.set_facecolor('black')
 
-    plt.show()
+    plt.savefig("img/prediction.png", bbox_inches='tight')
+    plt.close()
 
 
 def main():

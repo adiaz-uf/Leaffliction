@@ -64,7 +64,8 @@ def plot_data(dir_to_plot):
         # Adjust design
         plt.tight_layout()
 
-        plt.show()
+        plt.savefig("img/distribution.png", bbox_inches='tight')
+        plt.close()
 
 
 def main():

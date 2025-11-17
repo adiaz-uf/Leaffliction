@@ -7,6 +7,12 @@ create-venv:
 install-deps:
 	venv/bin/pip install -r requirements.txt
 
+distribution-apple:
+	@venv/bin/python3 src/Part1/Distribution.py Apple
+
+distribution-grape:
+	@venv/bin/python3 src/Part1/Distribution.py Grape
+
 augmentation-apple:
 	@venv/bin/python3 src/Part2/Augmentation.py data/original/Apple
 
