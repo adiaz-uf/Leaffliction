@@ -22,6 +22,15 @@ augmentation-grape-train:
 augmentation-one:
 	@venv/bin/python3 src/Part2/Augmentation.py "data/original/Apple/Apple_Black_rot/image (1).JPG"
 
+transform-one:
+	@venv/bin/python3 src/Part3/Transformation.py "data/original/Apple/Apple_Black_rot/image (1).JPG"
+
+tranform-apple:
+	@venv/bin/python3 src/Part3/Transformation.py -src data/original/Apple/ -dst data/tranformed/Apple/ 
+
+tranform-grape:
+	@venv/bin/python3 src/Part3/Transformation.py -src data/original/Grape/ -dst data/tranformed/Grape/ 
+
 train:
 	@venv/bin/python3 src/Part4/train.py data/augmented/augmented_to_train
 
